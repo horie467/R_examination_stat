@@ -36,6 +36,7 @@ good_score<-120
 verygood_score<-100
 #実行の設定
 print_process_flag <- TRUE
+stamp_flag <- TRUE
 
 if(print_process_flag) {
   print("Reading data...")
@@ -426,29 +427,30 @@ for (i in 1:nrow(score_table_df)) {
   )
   
   # --- 判子（画像）の貼り付け処理 ---
-  # 合計点による判定
-  stamp_file <- if (s$Total >= verygood_score) {
-    "./img/verygood.gif"
-  } else if (s$Total >= good_score) {
-    "./img/good.gif"
-  } else {
+  if(stamp_flag) {
+    # 合計点による判定
+    stamp_file <- if (s$Total >= verygood_score) {
+      "./img/verygood.gif"
+    } else if (s$Total >= good_score) {
+      "./img/good.gif"
+    } else {
     "./img/nogood.gif"
-  }
+    }
   
-  # 画像の読み込みとGrob化
-  img <- image_read(stamp_file)
-  img_grob <- rasterGrob(as.raster(img))
+    # 画像の読み込みとGrob化
+    img <- image_read(stamp_file)
+    img_grob <- rasterGrob(as.raster(img))
   
-  # 右上 (3cm x 3cm) の位置に配置
-  # A4 = 21.0cm x 29.7cm
-  # 右端から3.5cm、上端から3.5cmの位置を中心に3cm四方で描画
-  pushViewport(viewport(x = unit(1, "npc") - unit(2.5, "cm"), 
+    # 右上 (3cm x 3cm) の位置に配置
+    # A4 = 21.0cm x 29.7cm
+    # 右端から3.5cm、上端から3.5cmの位置を中心に3cm四方で描画
+    pushViewport(viewport(x = unit(1, "npc") - unit(2.5, "cm"), 
                         y = unit(1, "npc") - unit(2.5, "cm"), 
                         width = unit(3, "cm"), 
                         height = unit(3, "cm")))
-  grid.draw(img_grob)
-  popViewport()
-  
+    grid.draw(img_grob)
+    popViewport()
+  }
   
   dev.off()
 }
