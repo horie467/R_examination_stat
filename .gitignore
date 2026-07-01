@@ -47,3 +47,8 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Script results file
+2026.*
+2027.*
+2028.*
