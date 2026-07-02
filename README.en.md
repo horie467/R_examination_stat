@@ -13,18 +13,16 @@
   - Please create the file in Excel and save it as a CSV file.
 - Correct Answer Data: As correct answer data, prepare 200 correct answers in a CSV file in the following format.
 
-| Question No. | 1     | 2   | ... | 200 |
-|--------------|-------|-----|-----|-----|
+| Question No.   | 1   | 2   | ... | 200 |
+|----------------|-----|-----|-----|-----|
 | Correct Answer | 3   | 4   | ... | 5   |
 
 - Answer data of each student: Since mock exams often use mark sheet readers, we prepare a CSV file containing the following items as general output data.
 
-
 | Student ID | Name  | Question1 | Question2 | ... | Question200 |
-|----------|-------|-------|-------|-----|---------|
-| 1001     | name1 | 3     | 4     | ... | 5       |
-| 1002     | name2 | 2     | 4     | ... | 5       |
-
+|------------|-------|-----------|-----------|-----|-------------|
+| 1001       | name1 | 3         | 4         | ... | 5           |
+| 1002       | name2 | 2         | 4         | ... | 5           |
 
 - The data is intended to be created on a Japanese Windows system, but the R script itself will also work on Linux. (Confirmed on Ubuntu 22.04)
 
