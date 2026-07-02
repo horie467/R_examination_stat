@@ -6,15 +6,27 @@
 
 # Input data
 
-- The Registered Dietitian National Examination is a 200-question multiple-choice exam where you select one answer from five options. Since mock exams often use a mark sheet reader, we will prepare a CSV file containing the following items as general-purpose output data.
-- The Japanese code is formatted as Shift-JIS (cp932) for execution on Windows.
-- Please create the file in Excel (Japanese version) and save it as a CSV file.
-- The data is intended to be created on a Japanese Windows system, but the R script itself will also work on Linux. (Confirmed on Ubuntu 22.04)
+- The Registered Dietitian National Examination is a 200-question multiple-choice exam where you select one answer from five options.
+- The following data is needed to create the report card:
+  - All of these should be provided in CSV file format.
+  - The Japanese code is formatted as Shift-JIS (cp932) for execution on Japanese version of Windows.
+  - Please create the file in Excel and save it as a CSV file.
+- Correct Answer Data: As correct answer data, prepare 200 correct answers in a CSV file in the following format.
 
-| Student ID | full name | Question 1 | Question 2 | ... |
-|------------|-----------|------------|------------|-----|
-| 1001       | Name 1    | 1          | 3          | ... |
-| 1002       | Name 2    | 2          | 4          | ... |
+| Question No. | 1     | 2   | ... | 200 |
+|--------------|-------|-----|-----|-----|
+| Correct Answer | 3   | 4   | ... | 5   |
+
+- Answer data of each student: Since mock exams often use mark sheet readers, we prepare a CSV file containing the following items as general output data.
+
+
+| Student ID | Name  | Question1 | Question2 | ... | Question200 |
+|----------|-------|-------|-------|-----|---------|
+| 1001     | name1 | 3     | 4     | ... | 5       |
+| 1002     | name2 | 2     | 4     | ... | 5       |
+
+
+- The data is intended to be created on a Japanese Windows system, but the R script itself will also work on Linux. (Confirmed on Ubuntu 22.04)
 
 # Setup (Preparing for execution)
 
