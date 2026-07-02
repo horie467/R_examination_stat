@@ -48,6 +48,13 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
+<<<<<<< HEAD
 # results file
 20??.*
 
+=======
+# Script results file
+2026.*
+2027.*
+2028.*
+>>>>>>> 38cddb1607086b0de76f57f09c4af5f76bbdd480
