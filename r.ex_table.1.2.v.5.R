@@ -32,8 +32,8 @@ if(os_name=="Windows") {
 test_name <- "管理栄養士国家試験テストデータ"
 test_date <- "2026/4/2"
 #stampの点数
-good_score<-120
-verygood_score<-100
+good_score <- 120
+verygood_score <- 130
 #実行の設定
 print_process_flag <- TRUE
 stamp_flag <- TRUE
@@ -429,9 +429,9 @@ for (i in 1:nrow(score_table_df)) {
   # --- 判子（画像）の貼り付け処理 ---
   if(stamp_flag) {
     # 合計点による判定
-    stamp_file <- if (s$Total >= verygood_score) {
+    stamp_file <- if (as.numeric(s$Total) >= verygood_score) {
       "./img/verygood.gif"
-    } else if (s$Total >= good_score) {
+    } else if (as.numeric(s$Total) >= good_score) {
       "./img/good.gif"
     } else {
     "./img/nogood.gif"
