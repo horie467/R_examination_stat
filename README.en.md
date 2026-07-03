@@ -17,6 +17,10 @@
 |----------------|-----|-----|-----|-----|
 | Correct Answer | 3   | 4   | ... | 5   |
 
+- If the number entered in the data file matches the correct answer, it will be counted as 1 point.
+  - If an asterisk (\*) listed as the correct answer, any of the numbers will be accepted as correct.
+  - If the correct answer includes multiple numbers, it will be accepted as correct only if all of those numbers were marked.
+
 - Answer data of each student: Since mock exams often use mark sheet readers, we prepare a CSV file containing the following items as general output data.
 
 | Student ID | Name  | Question1 | Question2 | ... | Question200 |
