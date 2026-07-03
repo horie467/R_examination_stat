@@ -31,6 +31,7 @@ if(os_name=="Windows") {
 #試験名など
 test_name <- "管理栄養士国家試験テストデータ"
 test_date <- "2026/4/2"
+department_name <- "名古屋葵大学　健康栄養学科"
 #stampの点数
 good_score <- 120
 verygood_score <- 130
@@ -378,7 +379,7 @@ for (i in 1:nrow(score_table_df)) {
   }
   
   #マージン　左にスペースを空ける
-  caption1_grob <- textGrob("　　＊偏差値は60以上は水色、40未満はピンクで示してあります。\n　　＊順位が前半の場合は水色、後半の場合はピンクで示してあります。",x = 0,hjust = 0,gp=gpar(fontsize=9, fontface="plain")) #x = 0,hjust = 0,
+  caption1_grob <- textGrob("　　＊偏差値は60以上は水色、40未満はピンクで示してあります。\n　　＊順位が前半の場合は水色、後半の場合はピンクで示してあります。\n　　＊正解率が60%以上の場合は緑色で示してあります",x = 0,hjust = 0,gp=gpar(fontsize=8, fontface="plain")) #x = 0,hjust = 0,
   
   # --- 表3-3 (正解率) ---
   t33_data <- data.frame(
@@ -389,6 +390,24 @@ for (i in 1:nrow(score_table_df)) {
   )
   colnames(t33_data) <- c("項目", subject_cols)
   t33 <- tableGrob(t33_data, rows=NULL, theme=ttheme_default(base_family=font_family, base_size = 7))
+  
+  #正解率の表のセルに色を付ける
+  #60%以上→green
+  ii <- 1
+  for(jj in 2:11) {
+    if(as.numeric(sub("%","",t33_data[ii,jj])) >= 60.0 ) {
+      cell_idx <- find_cell(t33, ii + 1, jj, "core-bg")
+      t33$grobs[[cell_idx]]$gp <- gpar(fill = "darkolivegreen2", col = "grey")
+    }
+  }
+  
+  ii <- 2
+  for(jj in 2:11) {
+    if(as.numeric(sub("%","",t33_data[ii,jj])) >= 60.0 ) {
+      cell_idx <- find_cell(t33, ii + 1, jj, "core-bg")
+      t33$grobs[[cell_idx]]$gp <- gpar(fill = "darkolivegreen2", col = "grey")
+    }
+  }
   
   # --- グラフ描画 ---
   r1_grob <- get_radar_grob2(s[subject_cols], rep(30,10), "分野ごとの得点比較", sec_means, sections$max_q * 0.6, 4)
@@ -420,7 +439,7 @@ for (i in 1:nrow(score_table_df)) {
     caption1_grob,
     arrangeGrob(r1_grob, g33, ncol = 2),
     arrangeGrob(r2_grob, g34, ncol = 2),
-    textGrob("名古屋葵大学　健康栄養学科　　\n　　",gp=gpar(fontsize=8,fontface="plain"),x = 1.0, just = "right", hjust = 1),
+    textGrob(department_name,gp=gpar(fontsize=8,fontface="plain"),x = 1.0, just = "right", hjust = 1),
     
     heights = c(0.04, 0.08, 0.15,0.12,0.05,0.28, 0.28,0.02),
     vp = viewport(width = unit(17, "cm"), height = unit(27, "cm"))
@@ -588,7 +607,7 @@ for (i in 1:nrow(stu_data)) {
     t_legend,
     caption_grob,
     p1,
-    textGrob("名古屋葵大学　健康栄養学科　　\n　　",gp=gpar(fontsize=8,fontface="plain",fontfamily = font_family),x = 1.0, just = "right", hjust = 1),
+    textGrob(department_name,gp=gpar(fontsize=8,fontface="plain",fontfamily = font_family),x = 1.0, just = "right", hjust = 1),
     ncol=1,
     heights = c(0.39, 0.6, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.1,0.3, 3.4,0.01),
     vp = viewport(width = unit(17, "cm"), height = unit(27, "cm"))
