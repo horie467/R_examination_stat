@@ -415,7 +415,7 @@ for (i in 1:nrow(score_table_df)) {
   
   # --- レイアウト配置 ---
   grid.arrange(
-    textGrob("総合試験成績表", gp=gpar(fontsize=16, fontface="bold")),
+    textGrob("総合試験成績表１", gp=gpar(fontsize=16, fontface="bold")),
     t31, t32,t33,
     caption1_grob,
     arrangeGrob(r1_grob, g33, ncol = 2),
