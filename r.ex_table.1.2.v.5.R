@@ -551,7 +551,7 @@ for (i in 1:nrow(stu_data)) {
         fontface_matrix[5, c] <- "bold" 
         fill_matrix[2,c] <- "lightblue"
       }
-      if (q_accuracy[indices[c-1]] >= 45) { fill_matrix[6, c] <- "lightblue" }
+      if (q_accuracy[indices[c-1]] >= 45) { fill_matrix[6, c] <- "darkolivegreen2" }
     }
     
     table_theme <- ttheme_default(
