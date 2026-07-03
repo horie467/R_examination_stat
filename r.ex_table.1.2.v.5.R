@@ -90,7 +90,7 @@ q_accuracy <- colMeans(score_matrix) * 100
 total_scores <- rowSums(score_matrix)
 
 if(print_process_flag) {
-  print("Crating report data 1...")
+  print("Creating report data 1...")
 }
 
 # 集計表の作成 (ex_summary2.csv)
@@ -100,7 +100,7 @@ file_path <- file.path(output_dir1, "ex_summary2.csv")
 write.csv(summary2, file_path, row.names = FALSE, fileEncoding = "CP932")
 
 if(print_process_flag) {
-  print("Crating report data 2...")
+  print("Creating report data 2...")
 }
 
 
