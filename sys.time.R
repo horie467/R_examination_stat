@@ -7,6 +7,8 @@ system.time({source("./r.ex_table.1.2.v.5.R")})
 # 489.83    25.25   531.72 
 #ユーザ システム     経過 
 #573.14    31.12   632.84 
-#system.time({source("./r.ex_table.1.2.v.6.para.R")}) 
+system.time({source("./r.ex_table.1.2.v.6.para.R")}) 
 #  ユーザ システム     経過 
-#5.98     1.50   174.00 
+# 5.98     1.50   174.00 
+# ユーザ システム     経過 
+# 5.26     1.58   115.67 
