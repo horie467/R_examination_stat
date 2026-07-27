@@ -8,6 +8,8 @@ if (!require("e1071")) install.packages("e1071")
 if (!require("gridExtra")) install.packages("gridExtra")
 if (!require("ggplot2")) install.packages("ggplot2")
 if (!require("reshape2")) install.packages("reshape2")
+if (!require("doParallel")) install.packages("doParallel")
+if (!require("foreach")) install.packages("foreach")
 
 #library(conflicted)
 library(Cairo)
@@ -20,6 +22,10 @@ library(grid)
 library(png)
 library(e1071)
 library(magick)
+#成績表作成を並列化
+library(foreach)
+library(doParallel)
+
 
 # --- 設定 ---
 #Windowsでのフォント
@@ -46,6 +52,9 @@ if(print_process_flag) {
 #data file
 data_file_answers <- "./data/sample.answer.data.csv"
 data_file_scores <- "./data/sample.student.data.csv"
+#データファイルに空白があるとエラーになる?
+
+#入力ここまで
 data_suffix <- gsub("/",".",test_date)
 
 # --- 保存用ディレクトリの作成 ---
@@ -189,17 +198,17 @@ get_radar_grob1 <- function(data_row, max_vals, title, targets, f_label=FALSE) {
   ))
   colnames(r_data) <- subject_cols
   if(f_label) {
-    radarchart(r_data, pcol = c("red", "darkorange"), plwd = 3, plty = 1,
+    fmsb::radarchart(r_data, pcol = c("red", "darkorange"), plwd = 3, plty = 1,
                pty = 16, title = title, vlcex = 0.8, cglcol = "grey25"
                ,axistype = 1)
   } else {
-    radarchart(r_data, pcol = c("red", "darkorange"), plwd = 3, plty = 1,
+    fmsb::radarchart(r_data, pcol = c("red", "darkorange"), plwd = 3, plty = 1,
                pty = 16, title = title, vlcex = 0.8, cglcol = "grey25"
     )
   }
   legend("topright", legend = c("合格水準(%)", "平均正解率(%)"), col = c("red", "darkorange"), lty = 1, lwd = 2, cex = 0.7)
   dev.off()
-  rasterGrob(readPNG(tmp), interpolate = TRUE)
+  grid::rasterGrob(png::readPNG(tmp), interpolate = TRUE)
 }
 
 # --- 補助関数：レーダーチャートをGrobに変換 ---個人票 -- 60%の合格水準を表示
@@ -221,14 +230,14 @@ get_radar_grob2 <- function(data_row, max_vals, title, targets, pass_grade, axis
     step_val <- max_vals[1]/4
     axis_label <- c(0,step_val,step_val*2,step_val*3,step_val*4)
     r_data2 <- as.data.frame(rbind(r_data,as.numeric(sections$max_q)))
-    radarchart(r_data2, pcol = c("deepskyblue", "darkorange","red","magenta"), plwd = 2, plty = 1,
+    fmsb::radarchart(r_data2, pcol = c("deepskyblue", "darkorange","red","magenta"), plwd = 2, plty = 1,
                pty = 16, title = title, vlcex = 0.8, cglcol = "grey25"
                , axistype = axistype
                , caxislabels = axis_label)
     legend("topright", legend = c("平均", "あなたの点数","合格水準","満点"), col = c("deepskyblue", "darkorange","red","magenta"), lty = 1, lwd = 2, cex = 0.7)
     
   } else {
-    radarchart(r_data, pcol = c("deepskyblue", "darkorange","red"), plwd = 2, plty = 1,
+    fmsb::radarchart(r_data, pcol = c("deepskyblue", "darkorange","red"), plwd = 2, plty = 1,
                pty = 16, title = title, vlcex = 0.8, cglcol = "grey25"
                , axistype = axistype)  
     legend("topright", legend = c("平均", "あなたの点数","合格水準"), col = c("deepskyblue", "darkorange","red"), lty = 1, lwd = 2, cex = 0.7)
@@ -236,7 +245,7 @@ get_radar_grob2 <- function(data_row, max_vals, title, targets, pass_grade, axis
   }
   
   dev.off()
-  rasterGrob(readPNG(tmp), interpolate = TRUE)
+  grid::rasterGrob(png::readPNG(tmp), interpolate = TRUE)
 }
 
 # --- 2. 総合成績表の作成 ---
@@ -254,7 +263,7 @@ summary_stats <- data.frame(
         round(sd(score_table_df$Total), 2), round(skewness(score_table_df$Total), 2), round(kurtosis(score_table_df$Total), 2), median(score_table_df$Total))
 )
 t21_long <- tableGrob(t(summary_stats[,-1]), rows = NULL, cols = summary_stats$項目, 
-                      theme = ttheme_default(base_family = font_family, base_size = 11))
+                      theme = gridExtra::ttheme_default(base_family = font_family, base_size = 11))
 
 # グラフ2-1 (ヒストグラム)
 g21 <- ggplot(score_table_df, aes(x = Total)) +
@@ -279,7 +288,7 @@ row_heights <- unit(rep(6, nrow(freq_table_2) + 1), "mm") # 全行2 mm,最小？
 
 t22_distribution <- tableGrob(
   freq_table_2, rows = NULL, 
-  theme=ttheme_default(base_family=font_family, 
+  theme=gridExtra::ttheme_default(base_family=font_family, 
   base_size = 8,rowhead = list(padding = row_heights), 
   core = list(padding = unit(c(1, 2), "mm")),
   colhead = list(padding = unit(c(1, 2), "mm"))))
@@ -300,11 +309,22 @@ if(print_process_flag) {
 }
 
 # --- 個人別成績表1の作成 ---
+# 並行処理
+# 使用するコア数を指定してクラスターを作成
+num_cores <- detectCores() - 1  # PCがフリーズしないよう1コア残すのが推奨
+cl <- makeCluster(num_cores)
+registerDoParallel(cl)
 
-for (i in 1:nrow(score_table_df)) {
+# 並列処理の実行（%dopar% を使用）
+foreach(i = 1:nrow(score_table_df)) %dopar% {
+# thredに必要なライブラリ
+  library(ggplot2)
+  library(dplyr)
+
+#for (i in 1:nrow(score_table_df)) {
   s <- score_table_df[i, ]
   file_path <- file.path(output_dir2, paste0(s$学籍番号, ".成績表1.pdf"))
-  cairo_pdf(file_path, width = 8.27, height = 11.69, family = font_family)
+  grDevices::cairo_pdf(file_path, width = 8.27, height = 11.69, family = font_family)
   
   # --- 表3-1 (基本情報) ---
   t31_data <- data.frame(
@@ -317,7 +337,7 @@ for (i in 1:nrow(score_table_df)) {
     試験名 = test_name, 
     実施日 = test_date
   )
-  t31 <- tableGrob(t31_data, rows=NULL, theme=ttheme_minimal(base_family=font_family, base_size = 9))
+  t31 <- gridExtra::tableGrob(t31_data, rows=NULL, theme=gridExtra::ttheme_minimal(base_family=font_family, base_size = 9))
   
   # --- 表3-2 (得点・順位をすべて整数として整形) ---
   cols_with_total <- c(subject_cols, "Total")
@@ -331,7 +351,7 @@ for (i in 1:nrow(score_table_df)) {
   # 標準偏差行 (小数第2位)
   row_sd <- round(c(sec_sds, sd(score_table_df$Total)), 2)
   # 順位行 (整数化)
-  row_rank <- as.integer(as.numeric(s[paste0(cols_with_total, if_else(cols_with_total=="Total", "_Rank", "_Rank"))])) #Total_Rankのデータを作った
+  row_rank <- as.integer(as.numeric(s[paste0(cols_with_total, dplyr::if_else(cols_with_total=="Total", "_Rank", "_Rank"))])) #Total_Rankのデータを作った
   
   t32_data <- data.frame(
     項目 = c("得点", "偏差値", "平均点", "標準偏差", "順位"),
@@ -342,7 +362,7 @@ for (i in 1:nrow(score_table_df)) {
           format(row_rank, scientific = FALSE, trim = TRUE))
   )
   colnames(t32_data) <- c("項目", subject_cols, "合計")
-  t32 <- tableGrob(t32_data, rows=NULL, theme=ttheme_default(base_family=font_family, base_size = 6.5))
+  t32 <- gridExtra::tableGrob(t32_data, rows=NULL, theme=gridExtra::ttheme_default(base_family=font_family, base_size = 6.5))
   
   find_cell <- function(table, row, col, name = "core-fg"){
     l <- table$layout
@@ -354,11 +374,11 @@ for (i in 1:nrow(score_table_df)) {
   for(jj in 2:12) {
     if(as.numeric(t32_data[ii,jj]) >= 60 ) {
       cell_idx <- find_cell(t32, ii + 1, jj, "core-bg")
-      t32$grobs[[cell_idx]]$gp <- gpar(fill = "lightblue", col = "grey")
+      t32$grobs[[cell_idx]]$gp <- grid::gpar(fill = "lightblue", col = "grey")
     }
     if(as.numeric(t32_data[ii,jj]) < 40 ) {
       cell_idx <- find_cell(t32, ii + 1, jj, "core-bg")
-      t32$grobs[[cell_idx]]$gp <- gpar(fill = "pink", col = "grey")
+      t32$grobs[[cell_idx]]$gp <- grid::gpar(fill = "pink", col = "grey")
     }
   }
   
@@ -367,19 +387,19 @@ for (i in 1:nrow(score_table_df)) {
   for(jj in 2:12) {
     if(as.numeric(t32_data[ii,jj]) > unlist(t31_data["受験者数"])/2 ) {
       cell_idx <- find_cell(t32, ii + 1, jj, "core-bg")
-      t32$grobs[[cell_idx]]$gp <- gpar(fill = "pink", col = "grey")
+      t32$grobs[[cell_idx]]$gp <- grid::gpar(fill = "pink", col = "grey")
     }
   }
   ii <- 5
   for(jj in 2:12) {
     if(as.numeric(t32_data[ii,jj]) <= unlist(t31_data["受験者数"])/2 ) {
       cell_idx <- find_cell(t32, ii + 1, jj, "core-bg")
-      t32$grobs[[cell_idx]]$gp <- gpar(fill = "lightblue", col = "grey")
+      t32$grobs[[cell_idx]]$gp <- grid::gpar(fill = "lightblue", col = "grey")
     }
   }
   
   #マージン　左にスペースを空ける
-  caption1_grob <- textGrob("　　＊偏差値は60以上は水色、40未満はピンクで示してあります。\n　　＊順位が前半の場合は水色、後半の場合はピンクで示してあります。\n　　＊正解率が60%以上の場合は緑色で示してあります",x = 0,hjust = 0,gp=gpar(fontsize=8, fontface="plain")) #x = 0,hjust = 0,
+  caption1_grob <- grid::textGrob("　　＊偏差値は60以上は水色、40未満はピンクで示してあります。\n　　＊順位が前半の場合は水色、後半の場合はピンクで示してあります。\n　　＊正解率が60%以上の場合は緑色で示してあります",x = 0,hjust = 0,gp=grid::gpar(fontsize=8, fontface="plain")) #x = 0,hjust = 0,
   
   # --- 表3-3 (正解率) ---
   t33_data <- data.frame(
@@ -389,7 +409,7 @@ for (i in 1:nrow(score_table_df)) {
           paste0(format(round(sec_sds/sections$max_q*100,1),nsmall=1), "%"))
   )
   colnames(t33_data) <- c("項目", subject_cols)
-  t33 <- tableGrob(t33_data, rows=NULL, theme=ttheme_default(base_family=font_family, base_size = 7))
+  t33 <- gridExtra::tableGrob(t33_data, rows=NULL, theme=gridExtra::ttheme_default(base_family=font_family, base_size = 7))
   
   #正解率の表のセルに色を付ける
   #60%以上→green
@@ -397,7 +417,7 @@ for (i in 1:nrow(score_table_df)) {
   for(jj in 2:11) {
     if(as.numeric(sub("%","",t33_data[ii,jj])) >= 60.0 ) {
       cell_idx <- find_cell(t33, ii + 1, jj, "core-bg")
-      t33$grobs[[cell_idx]]$gp <- gpar(fill = "darkolivegreen2", col = "grey")
+      t33$grobs[[cell_idx]]$gp <- grid::gpar(fill = "darkolivegreen2", col = "grey")
     }
   }
   
@@ -405,7 +425,7 @@ for (i in 1:nrow(score_table_df)) {
   for(jj in 2:11) {
     if(as.numeric(sub("%","",t33_data[ii,jj])) >= 60.0 ) {
       cell_idx <- find_cell(t33, ii + 1, jj, "core-bg")
-      t33$grobs[[cell_idx]]$gp <- gpar(fill = "darkolivegreen2", col = "grey")
+      t33$grobs[[cell_idx]]$gp <- grid::gpar(fill = "darkolivegreen2", col = "grey")
     }
   }
   
@@ -433,16 +453,16 @@ for (i in 1:nrow(score_table_df)) {
     theme_bw(base_family=font_family) + labs(title="得点分布（オレンジ：あなたの位置）", x="合計点", y="人数") 
   
   # --- レイアウト配置 ---
-  grid.arrange(
-    textGrob("総合試験成績表１", gp=gpar(fontsize=16, fontface="bold")),
+  gridExtra::grid.arrange(
+    grid::textGrob("総合試験成績表１", gp=grid::gpar(fontsize=16, fontface="bold")),
     t31, t32,t33,
     caption1_grob,
-    arrangeGrob(r1_grob, g33, ncol = 2),
-    arrangeGrob(r2_grob, g34, ncol = 2),
-    textGrob(department_name,gp=gpar(fontsize=8,fontface="plain"),x = 1.0, just = "right", hjust = 1),
+    gridExtra::arrangeGrob(r1_grob, g33, ncol = 2),
+    gridExtra::arrangeGrob(r2_grob, g34, ncol = 2),
+    grid::textGrob(department_name,gp=grid::gpar(fontsize=8,fontface="plain"),x = 1.0, just = "right", hjust = 1),
     
     heights = c(0.04, 0.08, 0.15,0.12,0.05,0.28, 0.28,0.02),
-    vp = viewport(width = unit(17, "cm"), height = unit(27, "cm"))
+    vp = grid::viewport(width = unit(17, "cm"), height = unit(27, "cm"))
   )
   
   # --- 判子（画像）の貼り付け処理 ---
@@ -457,22 +477,26 @@ for (i in 1:nrow(score_table_df)) {
     }
   
     # 画像の読み込みとGrob化
-    img <- image_read(stamp_file)
-    img_grob <- rasterGrob(as.raster(img))
+    img <- magick::image_read(stamp_file)
+    img_grob <- grid::rasterGrob(as.raster(img))
   
     # 右上 (3cm x 3cm) の位置に配置
     # A4 = 21.0cm x 29.7cm
     # 右端から3.5cm、上端から3.5cmの位置を中心に3cm四方で描画
-    pushViewport(viewport(x = unit(1, "npc") - unit(2.5, "cm"), 
+    grid::pushViewport(grid::viewport(x = unit(1, "npc") - unit(2.5, "cm"), 
                         y = unit(1, "npc") - unit(2.5, "cm"), 
                         width = unit(3, "cm"), 
                         height = unit(3, "cm")))
-    grid.draw(img_grob)
-    popViewport()
+    grid::grid.draw(img_grob)
+    grid::popViewport()
   }
   
   dev.off()
+#}
 }
+
+# クラスターを停止（必須）
+stopCluster(cl)
 
 if(print_process_flag) {
   print("Creating individual report 2 ...")
@@ -481,31 +505,41 @@ if(print_process_flag) {
 #個人別成績表2の作製
 
 # 基本情報の共通テーマ（罫線あり）
-base_theme <- ttheme_default(
+base_theme <- gridExtra::ttheme_default(
   base_family = font_family, base_size = 6,
   padding = unit(c(1.2, 1.2), "mm"),
   core = list(bg_params = list(fill = "white", col = "gray70", lwd = 0.4)),
   colhead = list(bg_params = list(fill = "gray95", col = "gray70", lwd = 0.4))
 )
-base_theme_flarge <- ttheme_default(
+base_theme_flarge <- gridExtra::ttheme_default(
   base_family = font_family, base_size = 8,
   padding = unit(c(1.2, 1.2), "mm"),
   core = list(bg_params = list(fill = "white", col = "gray70", lwd = 0.4)),
   colhead = list(bg_params = list(fill = "gray95", col = "gray70", lwd = 0.4))
 )
-base_theme_flarge2 <- ttheme_default(
+base_theme_flarge2 <- gridExtra::ttheme_default(
   base_family = font_family, base_size = 10,
   padding = unit(c(1.2, 1.2), "mm"),
   core = list(bg_params = list(fill = "white", col = "gray70", lwd = 0.4)),
   colhead = list(bg_params = list(fill = "gray95", col = "gray70", lwd = 0.4))
 )
 
-for (i in 1:nrow(stu_data)) {
+#平行化
+cl <- makeCluster(num_cores)
+registerDoParallel(cl)
+
+# 並列処理の実行（%dopar% を使用）
+foreach(i = 1:nrow(score_table_df)) %dopar% {
+  # thredに必要なライブラリ
+  library(ggplot2)
+  library(dplyr)
+
+#for (i in 1:nrow(stu_data)) {
   file_path <- file.path(output_dir2, paste0(stu_data[i, "学籍番号"], ".成績表2.pdf"))
-  CairoPDF(file_path, width = 8.27, height = 11.69, family = font_family)
+  Cairo::CairoPDF(file_path, width = 8.27, height = 11.69, family = font_family)
   
   # 1. 表題
-  title_grob <- textGrob("総合試験成績表２", gp = gpar(fontsize = 16, fontface = "bold", fontfamily = font_family))
+  title_grob <- grid::textGrob("総合試験成績表２", gp = grid::gpar(fontsize = 16, fontface = "bold", fontfamily = font_family))
   
   #成績表1と合わせる
   t1_data <- data.frame(
@@ -518,7 +552,7 @@ for (i in 1:nrow(stu_data)) {
     試験名 = test_name, 
     実施日 = test_date
   )
-  t1 <- tableGrob(t1_data, rows=NULL, theme=ttheme_minimal(base_family=font_family, base_size = 9))
+  t1 <- gridExtra::tableGrob(t1_data, rows=NULL, theme=gridExtra::ttheme_minimal(base_family=font_family, base_size = 9))
   
   # 問題別テーブル作成関数
   create_q_table <- function(start_q, end_q) {
@@ -554,7 +588,7 @@ for (i in 1:nrow(stu_data)) {
       if (q_accuracy[indices[c-1]] >= 45) { fill_matrix[6, c] <- "darkolivegreen2" }
     }
     
-    table_theme <- ttheme_default(
+    table_theme <- gridExtra::ttheme_default(
       base_family = font_family, base_size = 5.5,
       # 縦のpaddingを1.2mmに増やしてセルを高く設定
       padding = unit(c(0.3, 1.5), "mm"), # 1.2 -> 1.5
@@ -563,7 +597,7 @@ for (i in 1:nrow(stu_data)) {
         bg_params = list(fill = fill_matrix, col = "gray70", lwd = 0.4)
       )
     )
-    tg <- tableGrob(df_t, rows = NULL, theme = table_theme)
+    tg <- gridExtra::tableGrob(df_t, rows = NULL, theme = table_theme)
     tg$widths <- unit(rep(0.95 / num_cols, num_cols), "npc")
     return(tg)
   }
@@ -572,10 +606,10 @@ for (i in 1:nrow(stu_data)) {
   
   # 凡例
   legend_text <- paste(apply(field_info[, c("code", "name")], 1, function(x) paste0(x[1], ":", x[2])), collapse = " ") # collapse = "    "
-  t_legend <- textGrob(paste("【分野コード説明】", legend_text), gp = gpar(fontsize = 5.5, fontfamily = font_family))
+  t_legend <- grid::textGrob(paste("【分野コード説明】", legend_text), gp = grid::gpar(fontsize = 5.5, fontfamily = font_family))
   
   #マージン　左にスペースを空ける
-  caption_grob <- textGrob("　　＊正誤については正解を青、不正解を赤で示してあります。正解率45%以上の場合は水色で示してあります。\n　　＊正解率が低い問題の正解は◎(問題番号が水色)、正解率が高い問題の不正解はX*(問題番号がピンク)で示してあります。",x = 0,hjust = 0,gp=gpar(fontsize=5, fontface="plain",fontfamily = font_family)) #x = 0,hjust = 0,
+  caption_grob <- grid::textGrob("　　＊正誤については正解を青、不正解を赤で示してあります。正解率45%以上の場合は水色で示してあります。\n　　＊正解率が低い問題の正解は◎(問題番号が水色)、正解率が高い問題の不正解はX*(問題番号がピンク)で示してあります。",x = 0,hjust = 0,gp=grid::gpar(fontsize=5, fontface="plain",fontfamily = font_family)) #x = 0,hjust = 0,
   
   # グラフ
   graph_data <- data.frame(分野 = factor(field_info$name, levels=field_info$name))
@@ -585,14 +619,13 @@ for (i in 1:nrow(stu_data)) {
   graph_data$low_acc_correct <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 1 & q_accuracy[field_info$start[f]:field_info$end[f]] < 45)))/max_question_num[1]*100.0
   graph_data$high_acc_incorrect <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 0 & q_accuracy[field_info$start[f]:field_info$end[f]] >= 45)))/max_question_num[1]*100.0
   
-  
-  plot_df <- melt(graph_data, id.vars="分野")
+  plot_df <- reshape2::melt(graph_data, id.vars="分野")
   
   p1 <- ggplot(plot_df, aes(x=分野, y=value, fill=variable)) +
     geom_bar(stat="identity", position="dodge", width=0.7,colour = "grey40", size = 0.5) +
     scale_fill_manual(values=c("low_acc_correct"="lightblue", "high_acc_incorrect"="orange"), 
                       labels=c("正解率の低い問題での正解(%)", "正解率の高い問題での不正解(%)")) +
-    labs(title="正解率の高い問題と低い問題", y="問題数", x="", fill = NULL) +
+    labs(title="正解率の高い問題と低い問題", y="正解率(%)", x="", fill = NULL) +
     
     theme_linedraw(base_family = font_family) + 
     theme(axis.text.x = element_text(angle = 15, hjust = 1, size = 6), 
@@ -604,7 +637,7 @@ for (i in 1:nrow(stu_data)) {
           #plot.title = element_text(size = 10, hjust = 0.5, fontface = "bold")) # <- error?
   
   # 全体配置
-  grid.arrange(
+  gridExtra::grid.arrange(
     title_grob,
     t1,
     tables_list[[1]], tables_list[[2]], tables_list[[3]], tables_list[[4]],
@@ -612,16 +645,19 @@ for (i in 1:nrow(stu_data)) {
     t_legend,
     caption_grob,
     p1,
-    textGrob(department_name,gp=gpar(fontsize=8,fontface="plain",fontfamily = font_family),x = 1.0, just = "right", hjust = 1),
+    grid::textGrob(department_name,gp=grid::gpar(fontsize=8,fontface="plain",fontfamily = font_family),x = 1.0, just = "right", hjust = 1),
     ncol=1,
     heights = c(0.39, 0.6, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.1,0.3, 3.4,0.01),
-    vp = viewport(width = unit(17, "cm"), height = unit(27, "cm"))
+    vp = grid::viewport(width = unit(17, "cm"), height = unit(27, "cm"))
   )
   
   dev.off()
+#}
+
 }
+# クラスターを停止（必須）
+stopCluster(cl)
 
 if(print_process_flag) {
   print("Execution completed")
 }
-
