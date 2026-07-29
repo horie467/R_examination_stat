@@ -33,6 +33,7 @@
 
 - Files with ".R" are R scripts. Please configure the following at the beginning: \# --- Settings --- including test_date, etc.
 - If the library is missing, please install it.
+- The script with the .para.R extension is designed to parallelize the generation of grade reports. It enables high-speed processing in a multicore CPU environment.
 
 # Execution
 
