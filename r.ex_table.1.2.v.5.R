@@ -94,10 +94,10 @@ if(print_process_flag) {
   print("Creating report data 1...")
 }
 
-# 集計表の作成 (ex_summary2.csv)
+# 集計表の作成 (ex_summary1.csv)
 summary2 <- cbind(stu_data[, 1:2], score_matrix, Total = total_scores)
 colnames(summary2) <- c("学籍番号", "氏名", q_names, "合計点")
-file_path <- file.path(output_dir1, "ex_summary2.csv")
+file_path <- file.path(output_dir1, "ex_summary1.csv")
 write.csv(summary2, file_path, row.names = FALSE, fileEncoding = "CP932")
 
 if(print_process_flag) {
@@ -105,7 +105,7 @@ if(print_process_flag) {
 }
 
 
-# 試験の総合成績表 (ex_summary3.csv)
+# 試験の総合成績表 (ex_summary2.csv)
 summary3 <- data.frame(
   項目 = c("試験名", "試験日", "平均点", "標準偏差", "受験者数", "最高点", "最低点", "歪率", "尖度", "中央値"),
   値 = c(test_name, test_date, 
@@ -118,7 +118,7 @@ summary3 <- data.frame(
         round(kurtosis(total_scores), 2), 
         as.integer(median(total_scores)))
 )
-file_path <- file.path(output_dir1, "ex_summary3.csv")
+file_path <- file.path(output_dir1, "ex_summary2.csv")
 write.csv(summary3,file_path, row.names = FALSE, fileEncoding = "CP932")
 
 if(print_process_flag) {
@@ -579,8 +579,6 @@ for (i in 1:nrow(stu_data)) {
   
   # グラフ
   graph_data <- data.frame(分野 = factor(field_info$name, levels=field_info$name))
-  #graph_data$low_acc_correct <- sapply(1:10, function(f) sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 1 & q_accuracy[field_info$start[f]:field_info$end[f]] < 45))
-  #graph_data$high_acc_incorrect <- sapply(1:10, function(f) sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 0 & q_accuracy[field_info$start[f]:field_info$end[f]] >= 45))
   #パーセントに直す
   graph_data$low_acc_correct <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 1 & q_accuracy[field_info$start[f]:field_info$end[f]] < 45)))/max_question_num[1]*100.0
   graph_data$high_acc_incorrect <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 0 & q_accuracy[field_info$start[f]:field_info$end[f]] >= 45)))/max_question_num[1]*100.0
