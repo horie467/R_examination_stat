@@ -248,8 +248,6 @@ get_radar_grob2 <- function(data_row, max_vals, title, targets, pass_grade, axis
 }
 
 # --- 2. 総合成績表の作成 ---
-file_path <- file.path(output_dir1, "summary_report.pdf")
-cairo_pdf(file_path, width = 8.27, height = 11.69, family = font_family)
 
 # タイトルと試験情報
 title_grob <- textGrob("総合成績報告書", gp=gpar(fontsize=20, fontface="bold"))
@@ -292,13 +290,19 @@ t22_distribution <- tableGrob(
   core = list(padding = unit(c(1, 2), "mm")),
   colhead = list(padding = unit(c(1, 2), "mm"))))
 
+
+#総合成績表のpdfの作成
+
+file_path <- file.path(output_dir1, "summary_report.pdf")
+cairo_pdf(file_path, width = 8.27, height = 11.69, family = font_family)
+
 # 縦並び配置
 grid.arrange(
   title_grob, info_grob, t21_long, 
-  #g21, 
   arrangeGrob(g21, t22_distribution, ncol = 2, widths = c(2, 1)),
   g22_grob,
-  heights = c(0.05, 0.05, 0.1, 0.35, 0.45),
+  textGrob(department_name,gp=gpar(fontsize=8,fontface="plain"),x = 1.0, just = "right", hjust = 1),
+  heights = c(0.05, 0.05, 0.1, 0.35, 0.45,0.02),
   vp = viewport(width = unit(17, "cm"), height = unit(27, "cm"))
 )
 dev.off()
