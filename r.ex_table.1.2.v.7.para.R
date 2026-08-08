@@ -566,8 +566,8 @@ foreach(i = 1:nrow(score_table_df)) %dopar% {
   #graph_data$low_acc_correct <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 1 & q_accuracy[field_info$start[f]:field_info$end[f]] < 45)))/max_question_num[1]*100.0
   #graph_data$high_acc_incorrect <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 0 & q_accuracy[field_info$start[f]:field_info$end[f]] >= 45)))/max_question_num[1]*100.0
   #◎の数
-  vgood_number <- sum(score_matrix[i,1:200] == 1 & q_accuracy[1:200] >= 45.0)
-  vbad_number <- sum(score_matrix[i,1:200] == 0 & q_accuracy[1:200] < 45.0)
+  vgood_number <- sum(score_matrix[i,1:200] == 1 & q_accuracy[1:200] < 45.0)
+  vbad_number <- sum(score_matrix[i,1:200] == 0 & q_accuracy[1:200] >= 45.0)
   comment_1 <- paste("◎の数(正解した難しい問題の数)は、" ,vgood_number,"です。",sep="")
   if(vgood_number > 0) {
     comment_1 <- paste(comment_1,"よくできました。",sep="")
