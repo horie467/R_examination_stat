@@ -523,7 +523,24 @@ for (i in 1:nrow(stu_data)) {
     実施日 = test_date
   )
   t1 <- tableGrob(t1_data, rows=NULL, theme=ttheme_minimal(base_family=font_family, base_size = 9))
+
+  #◎、X＊の問題数計算とコメント作成
+  #graph_data$low_acc_correct <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 1 & q_accuracy[field_info$start[f]:field_info$end[f]] < 45)))/max_question_num[1]*100.0
+  #graph_data$high_acc_incorrect <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 0 & q_accuracy[field_info$start[f]:field_info$end[f]] >= 45)))/max_question_num[1]*100.0
+  #◎の数
+  vgood_number <- sum(score_matrix[i,1:200] == 1 & q_accuracy[1:200] >= 45.0)
+  vbad_number <- sum(score_matrix[i,1:200] == 0 & q_accuracy[1:200] < 45.0)
+  comment_1 <- paste("◎の数(正解した難しい問題の数)は、" ,vgood_number,"です。",sep="")
+  if(vgood_number > 0) {
+    comment_1 <- paste(comment_1,"よくできました。",sep="")
+  }
+  comment_2 <- paste("X*の数(不正解だった易しい問題の数)は、",vbad_number,"です。",sep="")
+  if(vbad_number > 0) {
+    comment_2 <- paste(comment_2,"頑張りましょう。この問題をよく復習してください。",sep="")
+  }
+  t_comment <- grid::textGrob(paste(comment_1,"\n",comment_2,sep=""), x = 0,hjust = 0,gp = grid::gpar(fontsize = 8, fontfamily = font_family))
   
+    
   # 問題別テーブル作成関数
   create_q_table <- function(start_q, end_q) {
     indices <- start_q:end_q
@@ -609,6 +626,7 @@ for (i in 1:nrow(stu_data)) {
   grid.arrange(
     title_grob,
     t1,
+    t_comment,
     tables_list[[1]], tables_list[[2]], tables_list[[3]], tables_list[[4]],
     tables_list[[5]], tables_list[[6]], tables_list[[7]], tables_list[[8]],
     t_legend,
@@ -616,7 +634,7 @@ for (i in 1:nrow(stu_data)) {
     p1,
     textGrob(department_name,gp=gpar(fontsize=8,fontface="plain",fontfamily = font_family),x = 1.0, just = "right", hjust = 1),
     ncol=1,
-    heights = c(0.39, 0.6, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.1,0.3, 3.4,0.01),
+    heights = c(0.39, 0.6, 0.6, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.1,0.3, 3.4,0.01),
     vp = viewport(width = unit(17, "cm"), height = unit(27, "cm"))
   )
   

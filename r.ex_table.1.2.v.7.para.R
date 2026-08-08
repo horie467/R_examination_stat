@@ -53,6 +53,7 @@ data_file_answers <- "./data/sample.answer.data.csv"
 data_file_scores <- "./data/sample.student.data.csv"
 #データファイルに空白があるとエラーになる?
 
+
 #入力ここまで
 
 data_suffix <- gsub("/",".",test_date)
@@ -531,7 +532,7 @@ base_theme_flarge2 <- gridExtra::ttheme_default(
   colhead = list(bg_params = list(fill = "gray95", col = "gray70", lwd = 0.4))
 )
 
-#平行化
+#並列化
 cl <- makeCluster(num_cores)
 registerDoParallel(cl)
 
@@ -560,6 +561,23 @@ foreach(i = 1:nrow(score_table_df)) %dopar% {
     実施日 = test_date
   )
   t1 <- gridExtra::tableGrob(t1_data, rows=NULL, theme=gridExtra::ttheme_minimal(base_family=font_family, base_size = 9))
+  
+  #◎、X＊の問題数計算とコメント作成
+  #graph_data$low_acc_correct <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 1 & q_accuracy[field_info$start[f]:field_info$end[f]] < 45)))/max_question_num[1]*100.0
+  #graph_data$high_acc_incorrect <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 0 & q_accuracy[field_info$start[f]:field_info$end[f]] >= 45)))/max_question_num[1]*100.0
+  #◎の数
+  vgood_number <- sum(score_matrix[i,1:200] == 1 & q_accuracy[1:200] >= 45.0)
+  vbad_number <- sum(score_matrix[i,1:200] == 0 & q_accuracy[1:200] < 45.0)
+  comment_1 <- paste("◎の数(正解した難しい問題の数)は、" ,vgood_number,"です。",sep="")
+  if(vgood_number > 0) {
+    comment_1 <- paste(comment_1,"よくできました。",sep="")
+  }
+  comment_2 <- paste("X*の数(不正解だった易しい問題の数)は、",vbad_number,"です。",sep="")
+  if(vbad_number > 0) {
+    comment_2 <- paste(comment_2,"頑張りましょう。この問題をよく復習してください。",sep="")
+  }
+  t_comment <- grid::textGrob(paste(comment_1,"\n",comment_2,sep=""), x = 0,hjust = 0,gp = grid::gpar(fontsize = 8, fontfamily = font_family))
+  
   
   # 問題別テーブル作成関数
   create_q_table <- function(start_q, end_q) {
@@ -621,8 +639,8 @@ foreach(i = 1:nrow(score_table_df)) %dopar% {
   # グラフ
   graph_data <- data.frame(分野 = factor(field_info$name, levels=field_info$name))
   #パーセントに直す
-  graph_data$low_acc_correct <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 1 & q_accuracy[field_info$start[f]:field_info$end[f]] < 45)))/max_question_num[1]*100.0
-  graph_data$high_acc_incorrect <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 0 & q_accuracy[field_info$start[f]:field_info$end[f]] >= 45)))/max_question_num[1]*100.0
+  graph_data$low_acc_correct <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 1 & q_accuracy[field_info$start[f]:field_info$end[f]] < 45.0)))/max_question_num[1]*100.0
+  graph_data$high_acc_incorrect <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 0 & q_accuracy[field_info$start[f]:field_info$end[f]] >= 45.0)))/max_question_num[1]*100.0
   
   plot_df <- reshape2::melt(graph_data, id.vars="分野")
   
@@ -648,6 +666,7 @@ foreach(i = 1:nrow(score_table_df)) %dopar% {
   gridExtra::grid.arrange(
     title_grob,
     t1,
+    t_comment,
     tables_list[[1]], tables_list[[2]], tables_list[[3]], tables_list[[4]],
     tables_list[[5]], tables_list[[6]], tables_list[[7]], tables_list[[8]],
     t_legend,
@@ -655,7 +674,7 @@ foreach(i = 1:nrow(score_table_df)) %dopar% {
     p1,
     grid::textGrob(department_name,gp=grid::gpar(fontsize=8,fontface="plain",fontfamily = font_family),x = 1.0, just = "right", hjust = 1),
     ncol=1,
-    heights = c(0.39, 0.6, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.1,0.3, 3.4,0.01),
+    heights = c(0.39, 0.6, 0.6, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.1,0.3, 3.4,0.01),
     vp = grid::viewport(width = unit(17, "cm"), height = unit(27, "cm"))
   )
   
