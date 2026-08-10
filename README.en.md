@@ -39,6 +39,7 @@
 
 - Place your data in the `data` folder, open the R script with the `.R` extension in RStudio or a similar program, and run it using `source`.
 - To add a stamp, you will need the files in the `img` folder.
+- Download the ZIP file from Git, unzip it, then open the project file (.Rproj) in RStudio, load the *.para.R files, and click “Source” in the upper-right corner.
 
 # Output result
 
