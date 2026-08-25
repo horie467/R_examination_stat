@@ -37,7 +37,7 @@ good_score <- 120
 verygood_score <- 130
 #実行の設定
 print_process_flag <- TRUE
-stamp_flag <- TRUE
+stamp_flag <- FALSE
 
 if(print_process_flag) {
   print("Reading data...")
