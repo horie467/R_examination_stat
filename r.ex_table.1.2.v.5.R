@@ -1,6 +1,6 @@
-#学内Proxy用
-#Sys.setenv("http_proxy" = "http://axis.nagoya-aoi.ac.jp:8080")
-#Sys.setenv("https_proxy" = "http://axis.nagoya-aoi.ac.jp:8080")
+#成績表作成プログラム
+
+
 
 # 必要パッケージの読み込み
 if (!require("Cairo")) install.packages("Cairo")
