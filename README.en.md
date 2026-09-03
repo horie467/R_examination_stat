@@ -28,12 +28,13 @@
 | 1002       | name2 | 2         | 4         | ... | 5           |
 
 - The data is intended to be created on a Japanese Windows system, but the R script itself will also work on Linux. (Confirmed on Ubuntu 22.04)
+- The font settings are based on Windows. If an error occurs, please replace them with fonts installed on your system. (See `font_family` around line 30.)
 
 # Setup (Preparing for execution)
 
 - Files with ".R" are R scripts. Please configure the following at the beginning: \# --- Settings --- including test_date, etc.
 - If the library is missing, please install it.
-- The script with the .para.R extension is designed to parallelize the generation of grade reports. It enables high-speed processing in a multicore CPU environment.
+- The script with the .para.R extension is designed to parallelize the generation of grade reports. It enables high-speed processing in a multicolored CPU environment.
 
 # Execution
 
