@@ -131,8 +131,8 @@ summary3 <- data.frame(
         as.integer(nrow(stu_data)), 
         as.integer(max(total_scores)), 
         as.integer(min(total_scores)), 
-        round(skewness(total_scores), 2), 
-        round(kurtosis(total_scores), 2), 
+        round(e1071::skewness(total_scores,type=2), 2),  #Excelと合わせて、標本歪率とする。
+        round(e1071::kurtosis(total_scores,type=2), 2), 
         as.integer(median(total_scores)))
 )
 file_path <- file.path(output_dir1, "ex_summary2.csv")
@@ -266,7 +266,7 @@ info_grob <- textGrob(paste0("試験名：", test_name, "    実施日：", test
 summary_stats <- data.frame(
   項目 = c("受験者数", "最高点", "最低点", "平均点", "標準偏差", "歪率", "尖度", "中央値"),
   値 = c(nrow(score_table_df), max(score_table_df$Total), min(score_table_df$Total), round(mean(score_table_df$Total), 2),
-        round(sd(score_table_df$Total), 2), round(skewness(score_table_df$Total), 2), round(kurtosis(score_table_df$Total), 2), median(score_table_df$Total))
+        round(sd(score_table_df$Total), 2), round(e1071::skewness(score_table_df$Total,type=2), 2), round(e1071::kurtosis(score_table_df$Total,type=2), 2), median(score_table_df$Total))
 )
 t21_long <- tableGrob(t(summary_stats[,-1]), rows = NULL, cols = summary_stats$項目, 
                       theme = gridExtra::ttheme_default(base_family = font_family, base_size = 11))
