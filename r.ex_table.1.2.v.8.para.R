@@ -94,7 +94,7 @@ scoring <- function(student_ans, correct_ans) {
     if(length(s_ans_list) > 1) return(0)
     if(s_ans_list %in% c_ans_list) return(1) else return(0)
   } else {
-    #orを含まない場合は、完全一致のみ正解とする
+    #orを含まない場合は、完全一致のみ正解とする。
     if (identical(c_ans_list, s_ans_list)) return(1) else return(0)
   }
 }
