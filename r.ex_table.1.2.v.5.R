@@ -58,6 +58,9 @@ if (!dir.exists(output_dir2)) dir.create(output_dir2)
 ans_data <- read.csv(data_file_answers, fileEncoding = "CP932", stringsAsFactors = FALSE, check.names = FALSE)
 stu_data <- read.csv(data_file_scores, fileEncoding = "CP932", stringsAsFactors = FALSE, check.names = FALSE)
 
+#NA->0とする
+stu_data[is.na(stu_data)] <- 0
+
 if(print_process_flag) {
   print("Calculating stats...")
 }
@@ -601,8 +604,8 @@ for (i in 1:nrow(stu_data)) {
   # グラフ
   graph_data <- data.frame(分野 = factor(field_info$name, levels=field_info$name))
   #パーセントに直す
-  graph_data$low_acc_correct <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 1 & q_accuracy[field_info$start[f]:field_info$end[f]] < 45)))/max_question_num[1]*100.0
-  graph_data$high_acc_incorrect <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 0 & q_accuracy[field_info$start[f]:field_info$end[f]] >= 45)))/max_question_num[1]*100.0
+  graph_data$low_acc_correct <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 1 & q_accuracy[field_info$start[f]:field_info$end[f]] < 45.0))/max_question_num[f]*100.0)
+  graph_data$high_acc_incorrect <- sapply(1:10, function(f) (sum(score_matrix[i, field_info$start[f]:field_info$end[f]] == 0 & q_accuracy[field_info$start[f]:field_info$end[f]] >= 45.0))/max_question_num[f]*100.0)
   
   
   plot_df <- melt(graph_data, id.vars="分野")

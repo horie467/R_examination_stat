@@ -52,7 +52,7 @@ if(print_process_flag) {
 #data file
 data_file_answers <- "./data/sample.answer.data.csv"
 data_file_scores <- "./data/sample.student.data.csv"
-#データファイルに空白があるとNAと表示される。
+#データファイルに空白があるとNAと表示される。-> NAを0とする。
 
 
 #入力ここまで
