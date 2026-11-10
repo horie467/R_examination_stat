@@ -599,7 +599,7 @@ for (i in 1:nrow(stu_data)) {
   t_legend <- textGrob(paste("【分野コード説明】", legend_text), gp = gpar(fontsize = 5.5, fontfamily = font_family))
   
   #マージン　左にスペースを空ける
-  caption_grob <- textGrob("　　＊正誤については正解を青、不正解を赤で示してあります。正解率45%以上の場合は水色で示してあります。\n　　＊正解率が低い問題の正解は◎(問題番号が水色)、正解率が高い問題の不正解はX*(問題番号がピンク)で示してあります。",x = 0,hjust = 0,gp=gpar(fontsize=5, fontface="plain",fontfamily = font_family)) #x = 0,hjust = 0,
+  caption_grob <- textGrob("　　＊正誤については正解を青、不正解を赤で示してあります。正解率45%以上の場合は水色で示してあります。正答が＊のものは、全員正解としています。\n　　＊正解率が低い問題の正解は◎(問題番号が水色)、正解率が高い問題の不正解はX*(問題番号がピンク)で示してあります。",x = 0,hjust = 0,gp=gpar(fontsize=5, fontface="plain",fontfamily = font_family)) #x = 0,hjust = 0,
   
   # グラフ
   graph_data <- data.frame(分野 = factor(field_info$name, levels=field_info$name))
